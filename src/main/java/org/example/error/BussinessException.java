@@ -1,6 +1,5 @@
 package org.example.error;
 
-import java.io.BufferedInputStream;
 
 public class BussinessException extends Exception implements CommonError {
 

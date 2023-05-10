@@ -20,10 +20,12 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
+import java.util.Map;
 
 @Controller("user")
 @RequestMapping("/user")
-public class UserController {
+public class UserController extends BaseController {
 
     @Autowired
     private UserService userService;
@@ -50,12 +52,4 @@ public class UserController {
         return userVO;
     }
 
-    //定义exceptionhandler解决未被controller层吸收的exception
-    @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.OK)
-    public Object handerException(HttpServletRequest request, Exception ex){
-        CommonReturnType commonReturnType = new CommonReturnType();
-        commonReturnType.
-        return null;
-    }
 }
