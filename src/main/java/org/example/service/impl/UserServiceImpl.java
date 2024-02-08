@@ -1,6 +1,5 @@
 package org.example.service.impl;
 
-import org.apache.commons.lang3.StringUtils;
 import org.example.dao.UserDoMapper;
 import org.example.dao.UserPasswordDoMapper;
 import org.example.dataobject.UserDo;
@@ -9,6 +8,8 @@ import org.example.error.BussinessException;
 import org.example.error.EmBussinessError;
 import org.example.service.UserService;
 import org.example.service.model.UserModel;
+import org.example.validator.ValidationResult;
+import org.example.validator.ValidatorImpl;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,10 +24,13 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private UserPasswordDoMapper userPasswordDoMapper;
 
+    @Autowired
+    private ValidatorImpl validator;
+
     @Override
-    public UserModel getUserById(Integer id){
+    public UserModel getUserById(Integer id) {
         // 调用userDaoMapper
-        UserDo userDo=userDoMapper.selectByPrimaryKey(id);
+        UserDo userDo = userDoMapper.selectByPrimaryKey(id);
         if (userDo == null) {
             //System.out.println("null");
             return null;
@@ -55,11 +59,16 @@ public class UserServiceImpl implements UserService {
         if (userModel == null) {
             throw new BussinessException(EmBussinessError.PARAMETER_VALISATION_ERROR);
         }
-        if (StringUtils.isNotEmpty(userModel.getName())
-                || StringUtils.isNotEmpty(userModel.getTelephone())
-                || userModel.getAge() == null
-                || userModel.getGender() == null) {
-            throw new BussinessException(EmBussinessError.PARAMETER_VALISATION_ERROR);
+//        if (StringUtils.isNotEmpty(userModel.getName())
+//                || StringUtils.isNotEmpty(userModel.getTelephone())
+//                || userModel.getAge() == null
+//                || userModel.getGender() == null) {
+//            throw new BussinessException(EmBussinessError.PARAMETER_VALISATION_ERROR);
+//        }
+
+        ValidationResult result = validator.validate(userModel);
+        if (result.isHasErrors()) {
+            throw new BussinessException(EmBussinessError.PARAMETER_VALISATION_ERROR, result.getErrMsg());
         }
         UserDo userDo = convertFromModel(userModel);
         userDoMapper.insertSelective(userDo);

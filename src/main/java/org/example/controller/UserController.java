@@ -1,6 +1,5 @@
 package org.example.controller;
 
-import org.apache.tomcat.util.security.MD5Encoder;
 import org.example.controller.viewobject.UserVO;
 import org.example.error.BussinessException;
 import org.example.error.EmBussinessError;
@@ -15,8 +14,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import sun.misc.BASE64Encoder;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Random;
 
 @Controller("user")
@@ -38,7 +41,7 @@ public class UserController extends BaseController {
                                      @RequestParam(name = "otpCode") String otpCode,
                                      @RequestParam(name = "gender") Integer gender,
                                      @RequestParam(name = "age") Integer age,
-                                     @RequestParam(name = "password") String password) throws BussinessException {
+                                     @RequestParam(name = "password") String password) throws BussinessException, UnsupportedEncodingException, NoSuchAlgorithmException {
         //验证手机号和otpcode相符合
         String inSessionOtpCode = (String) httpServletRequest.getSession().getAttribute(telephone);
         if (!com.alibaba.druid.util.StringUtils.equals(otpCode, inSessionOtpCode)) { // 会对null判断
@@ -51,7 +54,7 @@ public class UserController extends BaseController {
         userModel.setAge(age);
         userModel.setTelephone(telephone);
         userModel.setRegisterMode("byphone");
-        userModel.setEncrptPassword(MD5Encoder.encode(password.getBytes()));
+        userModel.setEncrptPassword(this.EncodeByMd5(password));
 
         userService.register(userModel);
         return CommonReturnType.create(null);
@@ -89,13 +92,19 @@ public class UserController extends BaseController {
         return CommonReturnType.create(userVO);
     }
 
-    private UserVO convertFromModel(UserModel userModel){
-        if(userModel==null){
+    private UserVO convertFromModel(UserModel userModel) {
+        if (userModel == null) {
             return null;
         }
-        UserVO userVO=new UserVO();
-        BeanUtils.copyProperties(userModel,userVO);
+        UserVO userVO = new UserVO();
+        BeanUtils.copyProperties(userModel, userVO);
         return userVO;
     }
 
+    public String EncodeByMd5(String str) throws UnsupportedEncodingException, NoSuchAlgorithmException {
+        MessageDigest md5 = MessageDigest.getInstance("MD5");
+        BASE64Encoder base64Encoder = new BASE64Encoder();
+        String newstr = base64Encoder.encode(md5.digest(str.getBytes("utf-8")));
+        return newstr;
+    }
 }
