@@ -9,6 +9,7 @@ import org.example.service.model.UserModel;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -22,7 +23,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Random;
 
-@Controller("user")
+@Controller("/user")
 @RequestMapping("/user")
 @CrossOrigin(allowCredentials = "true", allowedHeaders = "*", originPatterns = "*")
 public class UserController extends BaseController {
@@ -38,7 +39,7 @@ public class UserController extends BaseController {
     @ResponseBody
     public CommonReturnType register(@RequestParam(name = "telephone") String telephone,
                                      @RequestParam(name = "name") String name,
-                                     @RequestParam(name = "otpCode") String otpCode,
+                                     @RequestParam(name = "otp") String otpCode,
                                      @RequestParam(name = "gender") Integer gender,
                                      @RequestParam(name = "age") Integer age,
                                      @RequestParam(name = "password") String password) throws BussinessException, UnsupportedEncodingException, NoSuchAlgorithmException {
@@ -107,4 +108,26 @@ public class UserController extends BaseController {
         String newstr = base64Encoder.encode(md5.digest(str.getBytes("utf-8")));
         return newstr;
     }
+
+    //用户登陆接口
+    @RequestMapping(value = "/login", method = {RequestMethod.POST}, consumes = {CONTENT_TYPE_FORMAT})
+    @ResponseBody
+    public CommonReturnType login(@RequestParam(name = "telphone") String telphone,
+                                  @RequestParam(name = "password") String password) throws BussinessException, UnsupportedEncodingException, NoSuchAlgorithmException {
+
+        //入参校验
+        if (org.apache.commons.lang3.StringUtils.isEmpty(telphone) ||
+                StringUtils.isEmpty(password)) {
+            throw new BussinessException(EmBussinessError.PARAMETER_VALISATION_ERROR);
+        }
+
+        //用户登陆服务,用来校验用户登陆是否合法
+        UserModel userModel = userService.validateLogin(telphone, this.EncodeByMd5(password));
+        //将登陆凭证加入到用户登陆成功的session内
+        this.httpServletRequest.getSession().setAttribute("IS_LOGIN", true);
+        this.httpServletRequest.getSession().setAttribute("LOGIN_USER", userModel);
+
+        return CommonReturnType.create(null);
+    }
+
 }

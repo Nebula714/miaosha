@@ -1,5 +1,6 @@
 package org.example.dao;
 
+import org.apache.ibatis.annotations.Param;
 import org.example.dataobject.ItemDo;
 
 import java.util.List;
@@ -54,4 +55,6 @@ public interface ItemDoMapper {
      * @mbg.generated Thu Feb 08 22:29:58 GMT+08:00 2024
      */
     int updateByPrimaryKey(ItemDo record);
+
+    int increaseSales(@Param("id") Integer id, @Param("amount") Integer amount);
 }

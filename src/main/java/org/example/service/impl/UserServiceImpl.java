@@ -1,5 +1,6 @@
 package org.example.service.impl;
 
+import org.apache.commons.lang3.StringUtils;
 import org.example.dao.UserDoMapper;
 import org.example.dao.UserPasswordDoMapper;
 import org.example.dataobject.UserDo;
@@ -72,6 +73,7 @@ public class UserServiceImpl implements UserService {
         }
         UserDo userDo = convertFromModel(userModel);
         userDoMapper.insertSelective(userDo);
+        userModel.setId(userDo.getId());
         UserPasswordDo userPasswordDo = convertPassowrdFromModel(userModel);
         userPasswordDoMapper.insertSelective(userPasswordDo);
         return;
@@ -92,7 +94,24 @@ public class UserServiceImpl implements UserService {
             return null;
         }
         UserDo userDo = new UserDo();
-        BeanUtils.copyProperties(userDo, userModel);
+        BeanUtils.copyProperties(userModel, userDo);
         return userDo;
+    }
+
+    @Override
+    public UserModel validateLogin(String telephone, String encrptPassword) throws BussinessException {
+        //通过用户的手机获取用户信息
+        UserDo userDO = userDoMapper.selectByTelephone(telephone);
+        if (userDO == null) {
+            throw new BussinessException(EmBussinessError.USER_LOGIN_FAIL);
+        }
+        UserPasswordDo userPasswordDo = userPasswordDoMapper.selectByUserId(userDO.getId());
+        UserModel userModel = convertFromDataObject(userDO, userPasswordDo);
+
+        //比对用户信息内加密的密码是否和传输进来的密码相匹配
+        if (!StringUtils.equals(encrptPassword, userModel.getEncrptPassword())) {
+            throw new BussinessException(EmBussinessError.USER_LOGIN_FAIL);
+        }
+        return userModel;
     }
 }

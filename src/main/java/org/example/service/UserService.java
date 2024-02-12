@@ -5,7 +5,9 @@ import org.example.service.model.UserModel;
 
 public interface UserService {
 
-    public UserModel getUserById(Integer id);
+    UserModel getUserById(Integer id);
 
     void register(UserModel userModel) throws BussinessException;
+
+    UserModel validateLogin(String telphone, String encrptPassword) throws BussinessException;
 }
