@@ -5,8 +5,10 @@ import org.example.error.BussinessException;
 import org.example.response.CommonReturnType;
 import org.example.service.ItemService;
 import org.example.service.model.ItemModel;
+import org.joda.time.format.DateTimeFormat;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,6 +27,8 @@ public class ItemController extends BaseController {
 
     @Autowired
     private ItemService itemService;
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     @RequestMapping(value = "/create", method = {RequestMethod.POST}, consumes = {CONTENT_TYPE_FORMAT})
     @ResponseBody
@@ -51,13 +55,26 @@ public class ItemController extends BaseController {
         }
         ItemVO itemVO = new ItemVO();
         BeanUtils.copyProperties(itemModel, itemVO);
+        if (itemModel.getPromoModel() != null) {
+            itemVO.setPromoStatus(itemModel.getPromoModel().getStatus());
+            itemVO.setPromoId(itemModel.getPromoModel().getId());
+//            System.out.println(itemModel.getPromoModel().getStartDate().toDate());
+            itemVO.setStartDate(new String(itemModel.getPromoModel().getStartDate().toString(DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss"))));
+            itemVO.setPromoPrice(itemModel.getPromoModel().getPromoItemPrice());
+        } else {
+            itemVO.setPromoStatus(0);
+        }
         return itemVO;
     }
 
     @RequestMapping(value = "/get", method = {RequestMethod.GET})
     @ResponseBody
     public CommonReturnType getItem(@RequestParam(name = "id") Integer id) {
-        ItemModel itemModel = itemService.getItemById(id);
+        ItemModel itemModel = (ItemModel) redisTemplate.opsForValue().get("item_" + id);
+        if (itemModel == null) {
+            itemModel = itemService.getItemById(id);
+        }
+
         ItemVO itemVO = convertVOFromModel(itemModel);
         return CommonReturnType.create(itemVO);
     }

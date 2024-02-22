@@ -20,6 +20,8 @@ public class ItemModel {
     private Integer sales; // 销量
     @NotBlank(message = "图片不能为空")
     private String imgUrl;
+    //使用聚合模型 如果promomodel不为空 表示其拥有还未结束的秒杀活动
+    private PromoModel promoModel;
 
     public Integer getId() {
         return id;
@@ -75,5 +77,13 @@ public class ItemModel {
 
     public void setSales(Integer sales) {
         this.sales = sales;
+    }
+
+    public PromoModel getPromoModel() {
+        return promoModel;
+    }
+
+    public void setPromoModel(PromoModel promoModel) {
+        this.promoModel = promoModel;
     }
 }

@@ -35,7 +35,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public OrderModel createOrder(Integer userId, Integer itemId, Integer amount) throws BussinessException {
+    public OrderModel createOrder(Integer userId, Integer itemId, Integer promoId, Integer amount) throws BussinessException {
         //校验下单状态 下单的商品是否存在 用户是否合法 购买数量是否正确
         ItemModel itemModel = itemService.getItemById(itemId);
         if (itemModel == null) {
@@ -48,6 +48,15 @@ public class OrderServiceImpl implements OrderService {
         if (amount <= 0 || amount > 99) {
             throw new BussinessException(EmBussinessError.PARAMETER_VALISATION_ERROR, "数量信息不正确");
         }
+
+        // 校验活动信息
+        if (promoId != null) {
+            if (promoId.intValue() != itemModel.getPromoModel().getId()) {
+                throw new BussinessException(EmBussinessError.PARAMETER_VALISATION_ERROR, "活动信息不正确");
+            } else if (itemModel.getPromoModel().getStatus() != 2) {
+                throw new BussinessException(EmBussinessError.PARAMETER_VALISATION_ERROR, "活动未开始");
+            }
+        }
         // 减库存的方式：1.落单减库存 2.支付减库存
         boolean result = itemService.decreaseStock(itemId, amount);
         if (!result) {
@@ -58,8 +67,13 @@ public class OrderServiceImpl implements OrderService {
         orderModel.setUserId(userId);
         orderModel.setItemId(itemId);
         orderModel.setAmount(amount);
-        orderModel.setItemPrice(itemModel.getPrice());
-        orderModel.setOrderPrice(itemModel.getPrice().multiply(new BigDecimal(amount)));
+        orderModel.setPromoId(promoId);
+        if (promoId != null) {
+            orderModel.setItemPrice(itemModel.getPromoModel().getPromoItemPrice());
+        } else {
+            orderModel.setItemPrice(itemModel.getPrice());
+        }
+        orderModel.setOrderPrice(orderModel.getItemPrice().multiply(new BigDecimal(amount)));
         //生产订单号
         orderModel.setId(generateOrderNo());
         OrderDo orderDo = convertFromOrderModel(orderModel);
