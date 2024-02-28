@@ -14,6 +14,7 @@ import org.example.validator.ValidationResult;
 import org.example.validator.ValidatorImpl;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +35,9 @@ public class ItemServiceImpl implements ItemService {
 
     @Autowired
     private PromoService promoService;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     private ItemDo convertItemDoFromItemModel(ItemModel itemModel) {
         if (itemModel == null) {
@@ -107,8 +111,9 @@ public class ItemServiceImpl implements ItemService {
     @Override
     @Transactional
     public boolean decreaseStock(Integer itemId, Integer amount) throws BussinessException {
-        int affectedRow = itemStockDoMapper.decreaseStock(itemId, amount);
-        if (affectedRow > 0) {
+//        int affectedRow = itemStockDoMapper.decreaseStock(itemId, amount);
+        long result = redisTemplate.opsForValue().increment("promo_item_stock_" + itemId, amount.intValue() * -1);
+        if (result >= 0) {
             // 更新库存成功
             return true;
         }

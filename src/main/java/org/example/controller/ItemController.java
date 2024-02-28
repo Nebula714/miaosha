@@ -3,7 +3,9 @@ package org.example.controller;
 import org.example.controller.viewobject.ItemVO;
 import org.example.error.BussinessException;
 import org.example.response.CommonReturnType;
+import org.example.service.CacheService;
 import org.example.service.ItemService;
+import org.example.service.PromoService;
 import org.example.service.model.ItemModel;
 import org.joda.time.format.DateTimeFormat;
 import org.springframework.beans.BeanUtils;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Controller("/item")
@@ -29,6 +32,11 @@ public class ItemController extends BaseController {
     private ItemService itemService;
     @Autowired
     private RedisTemplate redisTemplate;
+
+    @Autowired
+    private CacheService cacheService;
+    @Autowired
+    private PromoService promoService;
 
     @RequestMapping(value = "/create", method = {RequestMethod.POST}, consumes = {CONTENT_TYPE_FORMAT})
     @ResponseBody
@@ -58,7 +66,6 @@ public class ItemController extends BaseController {
         if (itemModel.getPromoModel() != null) {
             itemVO.setPromoStatus(itemModel.getPromoModel().getStatus());
             itemVO.setPromoId(itemModel.getPromoModel().getId());
-//            System.out.println(itemModel.getPromoModel().getStartDate().toDate());
             itemVO.setStartDate(new String(itemModel.getPromoModel().getStartDate().toString(DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss"))));
             itemVO.setPromoPrice(itemModel.getPromoModel().getPromoItemPrice());
         } else {
@@ -70,9 +77,17 @@ public class ItemController extends BaseController {
     @RequestMapping(value = "/get", method = {RequestMethod.GET})
     @ResponseBody
     public CommonReturnType getItem(@RequestParam(name = "id") Integer id) {
-        ItemModel itemModel = (ItemModel) redisTemplate.opsForValue().get("item_" + id);
+        ItemModel itemModel = null;
+        //
+        itemModel = (ItemModel) cacheService.getFromCommonCache("item_" + id);
         if (itemModel == null) {
-            itemModel = itemService.getItemById(id);
+            itemModel = (ItemModel) redisTemplate.opsForValue().get("item_" + id);
+            if (itemModel == null) {
+                itemModel = itemService.getItemById(id);
+                redisTemplate.opsForValue().set("item_" + id, itemModel);
+                redisTemplate.expire("item_" + id, 10, TimeUnit.MINUTES);
+            }
+            cacheService.setCommonCache("item_", itemModel);
         }
 
         ItemVO itemVO = convertVOFromModel(itemModel);
@@ -88,5 +103,12 @@ public class ItemController extends BaseController {
             return itemVO;
         }).collect(Collectors.toList());
         return CommonReturnType.create(itemVOList);
+    }
+
+    @RequestMapping(value = "publishpromo", method = {RequestMethod.GET})
+    @ResponseBody
+    public CommonReturnType publishPromo(@RequestParam(name = "id") Integer id) {
+        promoService.publishPromo(id);
+        return CommonReturnType.create(null);
     }
 }

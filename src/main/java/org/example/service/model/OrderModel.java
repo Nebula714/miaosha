@@ -1,8 +1,9 @@
 package org.example.service.model;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
-public class OrderModel {
+public class OrderModel implements Serializable {
     private String id; // string 需要有明确属性
 
     private Integer userId;

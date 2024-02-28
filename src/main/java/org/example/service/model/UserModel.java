@@ -5,9 +5,10 @@ import org.hibernate.validator.constraints.NotBlank;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
+import java.io.Serializable;
 
 // model 是真正的使用的model
-public class UserModel {
+public class UserModel implements Serializable {
     private Integer Id;
     @NotBlank(message = "用户名不能为空")
     private String name;

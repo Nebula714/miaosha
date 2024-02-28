@@ -2,10 +2,11 @@ package org.example.service.model;
 
 import org.joda.time.DateTime;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 
-public class PromoModel {
+public class PromoModel implements Serializable {
     private Integer id;
     private Integer status; // 1:还未开始 2:进行中 3:已结束
     private String promoName;
